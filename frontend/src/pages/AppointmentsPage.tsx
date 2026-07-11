@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -15,6 +14,7 @@ import {
   MenuItem,
   Paper,
   Select,
+  Skeleton,
   Switch,
   Table,
   TableBody,
@@ -48,6 +48,30 @@ function normalizeTime(value: string): string {
   return value.length === 5 ? `${value}:00` : value;
 }
 
+function formatDateInput(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function currentTimeRoundedToMinutes(stepMinutes = 5): string {
+  const now = new Date();
+  const minutes = now.getMinutes();
+  const rounded = Math.ceil(minutes / stepMinutes) * stepMinutes;
+  now.setMinutes(rounded, 0, 0);
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
+
+function addMinutes(time: string, minutesToAdd: number): string {
+  const [hour, minute] = time.split(":").map((part) => Number.parseInt(part, 10));
+  const base = hour * 60 + minute + minutesToAdd;
+  const wrapped = ((base % 1440) + 1440) % 1440;
+  const nextHour = Math.floor(wrapped / 60);
+  const nextMinute = wrapped % 60;
+  return `${String(nextHour).padStart(2, "0")}:${String(nextMinute).padStart(2, "0")}`;
+}
+
 function resolveDisplayPaymentMode(value: AppointmentPaymentMode | null): string {
   return value ?? "N/A";
 }
@@ -60,6 +84,10 @@ const appointmentSchema = z
     appointmentDate: z.string().min(1, "Appointment date is required."),
     startTime: z.string().regex(/^\d{2}:\d{2}$/, "Start time is required."),
     endTime: z.string().regex(/^\d{2}:\d{2}$/, "End time is required."),
+    durationMinutes: z
+      .number({ error: "Duration is required." })
+      .min(5, "Duration must be at least 5 minutes.")
+      .max(600, "Duration is too high."),
     totalAmount: z
       .number({ error: "Amount is required." })
       .min(0.01, "Amount must be greater than zero.")
@@ -108,6 +136,8 @@ export function AppointmentsPage() {
   const queryClient = useQueryClient();
   const clearSession = useAuthStore((state) => state.clearSession);
   const currentUser = useAuthStore((state) => state.user);
+  const defaultDate = formatDateInput(new Date());
+  const defaultStartTime = currentTimeRoundedToMinutes();
   const canDeleteAppointments = currentUser?.role === "OWNER";
   const [editor, setEditor] = useState<EditorState>(initialEditorState);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -151,9 +181,10 @@ export function AppointmentsPage() {
       customerId: "",
       serviceId: "",
       staffId: "",
-      appointmentDate: "",
-      startTime: "10:00",
-      endTime: "10:45",
+      appointmentDate: defaultDate,
+      startTime: defaultStartTime,
+      endTime: addMinutes(defaultStartTime, 45),
+      durationMinutes: 45,
       totalAmount: 0,
       paymentMode: "UPI",
       paid: false,
@@ -166,6 +197,8 @@ export function AppointmentsPage() {
   const selectedStaffId = watch("staffId");
   const selectedPaymentMode = watch("paymentMode");
   const selectedAmount = watch("totalAmount");
+  const selectedDurationMinutes = watch("durationMinutes");
+  const selectedStartTime = watch("startTime");
   const isPaid = watch("paid");
   const selectedStatus = watch("status");
 
@@ -245,6 +278,11 @@ export function AppointmentsPage() {
         appointmentDate: appointment.appointmentDate,
         startTime: appointment.startTime.slice(0, 5),
         endTime: appointment.endTime.slice(0, 5),
+        durationMinutes: Math.max(
+          5,
+          parseTimeToMinutes(appointment.endTime.slice(0, 5)) -
+            parseTimeToMinutes(appointment.startTime.slice(0, 5))
+        ),
         totalAmount: appointment.totalAmount,
         paymentMode: appointment.paymentMode ?? "UPI",
         paid: appointment.paid,
@@ -330,16 +368,19 @@ export function AppointmentsPage() {
     if (!selectedService) {
       return;
     }
+    setValue("durationMinutes", selectedService.durationMinutes, { shouldValidate: true });
     setValue("totalAmount", selectedService.price, { shouldValidate: true });
   }, [selectedService, setValue]);
 
   useEffect(() => {
-    if (!editor.open || editor.mode !== "create" || !services.length || selectedServiceId) {
+    if (!selectedStartTime || !selectedDurationMinutes) {
       return;
     }
 
-    setValue("serviceId", services[0].id, { shouldValidate: true });
-  }, [editor.mode, editor.open, selectedServiceId, services, setValue]);
+    setValue("endTime", addMinutes(selectedStartTime, selectedDurationMinutes), {
+      shouldValidate: true,
+    });
+  }, [selectedDurationMinutes, selectedStartTime, setValue]);
 
   return (
     <main className="role-home">
@@ -402,11 +443,12 @@ export function AppointmentsPage() {
                 setPageError(null);
                 reset({
                   customerId: "",
-                  serviceId: services[0]?.id ?? "",
-                  staffId: staff[0]?.id ?? "",
-                  appointmentDate: "",
-                  startTime: "10:00",
-                  endTime: "10:45",
+                  serviceId: "",
+                  staffId: "",
+                  appointmentDate: defaultDate,
+                  startTime: defaultStartTime,
+                  endTime: addMinutes(defaultStartTime, 45),
+                  durationMinutes: 45,
                   totalAmount: 0,
                   paymentMode: "UPI",
                   paid: false,
@@ -457,8 +499,10 @@ export function AppointmentsPage() {
         ) : null}
 
         {appointmentsQuery.isLoading ? (
-          <Box sx={{ marginTop: 4, display: "flex", justifyContent: "center" }}>
-            <CircularProgress />
+          <Box sx={{ marginTop: 3, display: "grid", gap: 1.2 }}>
+            <Skeleton variant="rounded" height={44} />
+            <Skeleton variant="rounded" height={44} />
+            <Skeleton variant="rounded" height={44} />
           </Box>
         ) : (
           <Box className="table-scroll">
@@ -658,12 +702,37 @@ export function AppointmentsPage() {
               helperText={errors.startTime?.message}
               {...register("startTime")}
             />
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              {[5, 10, 20].map((mins) => (
+                <Button
+                  key={mins}
+                  size="small"
+                  variant="outlined"
+                  onClick={() => {
+                    const base = selectedStartTime || currentTimeRoundedToMinutes();
+                    setValue("startTime", addMinutes(base, mins), { shouldValidate: true });
+                  }}
+                >
+                  +{mins} min
+                </Button>
+              ))}
+            </Box>
+            <TextField
+              label="Duration (minutes)"
+              type="number"
+              slotProps={{ htmlInput: { min: 5, max: 600, step: 5 }, inputLabel: { shrink: true } }}
+              error={Boolean(errors.durationMinutes)}
+              helperText={errors.durationMinutes?.message}
+              {...register("durationMinutes", {
+                setValueAs: (value) => Number.parseInt(value, 10),
+              })}
+            />
             <TextField
               label="End Time"
               type="time"
-              slotProps={{ inputLabel: { shrink: true } }}
+              slotProps={{ htmlInput: { readOnly: true }, inputLabel: { shrink: true } }}
               error={Boolean(errors.endTime)}
-              helperText={errors.endTime?.message}
+              helperText={errors.endTime?.message || "Auto-calculated from start time and duration"}
               {...register("endTime")}
             />
 
@@ -733,7 +802,15 @@ export function AppointmentsPage() {
             </FormControl>
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          sx={{
+            position: "sticky",
+            bottom: 0,
+            backdropFilter: "blur(6px)",
+            backgroundColor: "rgba(255, 255, 255, 0.85)",
+            borderTop: "1px solid var(--outline-variant)",
+          }}
+        >
           <Button
             onClick={() => {
               setEditor(initialEditorState);

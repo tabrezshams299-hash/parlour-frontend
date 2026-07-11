@@ -267,6 +267,27 @@ a {
   min-width: 640px;
 }
 
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.72rem;
+}
+
+.bento-card {
+  border: 1px solid rgba(233, 30, 99, 0.14);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(255, 242, 247, 0.88));
+  box-shadow: 0 8px 20px rgba(181, 56, 104, 0.1);
+  backdrop-filter: blur(8px);
+  padding: 0.78rem 0.86rem;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.bento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 24px rgba(181, 56, 104, 0.15);
+}
+
 .profile-grid {
   margin-top: 1.4rem;
   display: grid;
@@ -357,6 +378,25 @@ a {
 }
 
 @media (max-width: 899px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-form-panel {
+    order: 1;
+    align-items: flex-start;
+    padding-top: calc(1rem + env(safe-area-inset-top));
+  }
+
+  .auth-brand-panel {
+    order: 2;
+    padding-top: 0.35rem;
+  }
+
+  .bento-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .mobile-quick-nav {
     display: flex;
   }
@@ -373,6 +413,10 @@ a {
 }
 
 @media (max-width: 620px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+
   .role-home-card {
     border-radius: 18px;
   }
