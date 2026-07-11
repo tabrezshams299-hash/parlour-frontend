@@ -1,0 +1,388 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --primary: #e91e63;
+  --primary-soft: #ffe0ea;
+  --secondary: #d4a373;
+  --success: #2e7d32;
+  --warning: #ed6c02;
+  --error: #d32f2f;
+  --background: #fff9f7;
+  --surface: #ffffff;
+  --surface-glass: rgba(255, 255, 255, 0.78);
+  --text: #2c2628;
+  --muted: #786a6f;
+  --border: #f1d7df;
+  --shadow-soft: 0 10px 30px rgba(181, 56, 104, 0.12);
+  --shadow-lg: 0 20px 45px rgba(181, 56, 104, 0.2);
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --space-1: 0.375rem;
+  --space-2: 0.625rem;
+  --space-3: 0.875rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 2rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  font-family: "Manrope", "Plus Jakarta Sans", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 7% -12%, rgba(233, 30, 99, 0.2), transparent 38%),
+    radial-gradient(circle at 100% 0%, rgba(212, 163, 115, 0.2), transparent 35%),
+    linear-gradient(180deg, #fffcfb 0%, #fff5f8 100%);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+}
+
+.auth-layout {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.auth-brand-panel {
+  padding:
+    calc(1.6rem + env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    0.5rem
+    max(1rem, env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-4);
+  animation: fade-slide 0.45s ease-out;
+}
+
+.auth-kicker {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #b10f4b;
+  background: var(--primary-soft);
+  border: 1px solid rgba(233, 30, 99, 0.18);
+  border-radius: 999px;
+  padding: 0.38rem 0.82rem;
+  text-transform: uppercase;
+}
+
+.auth-brand-panel h1 {
+  margin: 0;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(2.1rem, 8vw, 3.8rem);
+  line-height: 1.02;
+  letter-spacing: -0.012em;
+}
+
+.auth-brand-panel p {
+  margin: 0;
+  max-width: 620px;
+  color: var(--muted);
+  line-height: 1.68;
+}
+
+.auth-form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    var(--space-4)
+    max(1rem, env(safe-area-inset-right))
+    calc(1.4rem + env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface-glass);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(14px);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.2rem, 4vw, 2rem);
+  box-shadow: var(--shadow-lg);
+  animation: fade-slide 0.45s ease-out;
+}
+
+.auth-card h2 {
+  margin: 0;
+}
+
+.auth-subtitle {
+  color: var(--muted);
+  margin-top: 0.45rem;
+}
+
+.auth-form {
+  margin-top: 1.4rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.auth-form button,
+.role-home-card button {
+  margin-top: 0.55rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.84rem 1rem;
+  font-size: 0.93rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(125deg, #e91e63 0%, #f06292 48%, #d4a373 100%);
+  cursor: pointer;
+}
+
+.auth-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.field-error,
+.form-error {
+  margin: 0;
+  color: var(--error);
+  font-size: 0.82rem;
+}
+
+.auth-help {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.loading-screen,
+.role-home {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    calc(var(--space-4) + env(safe-area-inset-top))
+    max(0.8rem, env(safe-area-inset-right))
+    calc(5.5rem + env(safe-area-inset-bottom))
+    max(0.8rem, env(safe-area-inset-left));
+}
+
+.loading-screen {
+  flex-direction: column;
+  gap: 0.7rem;
+  color: var(--muted);
+}
+
+.loading-dot {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  animation: pulse 1.12s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.55);
+    opacity: 0.3;
+  }
+}
+
+@keyframes fade-slide {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.role-home {
+  align-items: flex-start;
+}
+
+.role-home-card {
+  width: min(100%, 1120px);
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.9));
+  box-shadow: var(--shadow-soft);
+  padding: clamp(1rem, 3.6vw, 1.8rem);
+  overflow: hidden;
+  animation: fade-slide 0.38s ease-out;
+}
+
+.role-home-card p {
+  color: var(--muted);
+}
+
+.role-home-card .MuiButton-root {
+  border-radius: 12px;
+}
+
+.role-home-card .MuiOutlinedInput-root,
+.role-home-card .MuiPaper-root.MuiPaper-outlined {
+  border-radius: 12px;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 0.5rem;
+  padding-bottom: 0.3rem;
+}
+
+.table-scroll table {
+  min-width: 640px;
+}
+
+.profile-grid {
+  margin-top: 1.4rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.72rem;
+}
+
+.profile-grid div {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.78rem;
+  background: #fff;
+}
+
+.profile-grid span {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.profile-grid p {
+  margin: 0.35rem 0 0;
+  color: var(--text);
+}
+
+.inline-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.mobile-quick-nav {
+  position: fixed;
+  left: max(0.5rem, env(safe-area-inset-left));
+  right: max(0.5rem, env(safe-area-inset-right));
+  bottom: max(0.52rem, env(safe-area-inset-bottom));
+  z-index: 1300;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0.5rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.84);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-lg);
+}
+
+.mobile-quick-nav-item {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  padding: 0.58rem 0.35rem;
+  border-radius: 11px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  line-height: 1.22;
+  color: #7a5964;
+  text-decoration: none;
+  transition: all 160ms ease;
+}
+
+.mobile-quick-nav-item.active {
+  color: #ffffff;
+  background: linear-gradient(125deg, #e91e63, #d4a373);
+}
+
+@media (min-width: 900px) {
+  .auth-layout {
+    grid-template-columns: 1.05fr 1fr;
+  }
+
+  .auth-brand-panel {
+    padding: clamp(2.2rem, 5vw, 4.6rem);
+  }
+
+  .auth-form-panel {
+    padding: 1.4rem clamp(1.4rem, 4vw, 3rem);
+  }
+
+  .profile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 899px) {
+  .mobile-quick-nav {
+    display: flex;
+  }
+
+  .role-home-card .MuiButton-root {
+    min-height: 40px;
+    font-size: 0.82rem;
+    padding-inline: 0.7rem;
+  }
+
+  .role-home-card .MuiChip-root {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 620px) {
+  .role-home-card {
+    border-radius: 18px;
+  }
+
+  .role-home-card .MuiTypography-h4 {
+    font-size: 1.45rem;
+    line-height: 1.2;
+  }
+
+  .table-scroll table {
+    min-width: 580px;
+  }
+}
