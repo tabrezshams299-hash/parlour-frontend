@@ -32,7 +32,6 @@ import { Link } from "react-router-dom";
 
 import { userService } from "../../services/userService";
 import { getApiErrorMessage } from "../../utils/apiError";
-import type { UserRole } from "../../types/auth";
 import { useAuthStore } from "../../store/authStore";
 
 const userSchema = z.object({
@@ -63,8 +62,13 @@ const initialEditorState: EditorState = {
   mode: "create",
 };
 
-const roleOptions: Array<{ label: string; value: UserRole }> = [
+const allRoleOptions: Array<{ label: string; value: UserFormValues["role"] }> = [
   { label: "Owner", value: "OWNER" },
+  { label: "Reception", value: "RECEPTION" },
+  { label: "Staff", value: "STAFF" },
+];
+
+const nonOwnerRoleOptions: Array<{ label: string; value: UserFormValues["role"] }> = [
   { label: "Reception", value: "RECEPTION" },
   { label: "Staff", value: "STAFF" },
 ];
@@ -93,7 +97,8 @@ export function UsersPage() {
   const queryClient = useQueryClient();
   const clearSession = useAuthStore((state) => state.clearSession);
   const currentUser = useAuthStore((state) => state.user);
-  const canCreateUsers = currentUser?.role === "OWNER";
+  const canCreateUsers = currentUser?.role === "OWNER" || currentUser?.role === "SUPER_ADMIN";
+  const isSuperAdmin = currentUser?.role === "SUPER_ADMIN";
   const [editor, setEditor] = useState<EditorState>(initialEditorState);
   const [pageError, setPageError] = useState<string | null>(null);
 
@@ -180,7 +185,7 @@ export function UsersPage() {
         mobile: user.mobile,
         email: user.email,
         password: "",
-        role: user.role,
+        role: user.role as UserFormValues["role"],
         active: user.active,
       });
       setEditor({
@@ -443,11 +448,12 @@ export function UsersPage() {
                 labelId="role-select-label"
                 label="Role"
                 value={selectedRole}
+                disabled={!isSuperAdmin && selectedRole === "OWNER"}
                 onChange={(event) => {
-                  setValue("role", event.target.value as UserRole);
+                  setValue("role", event.target.value as UserFormValues["role"]);
                 }}
               >
-                {roleOptions.map((role) => (
+                {(isSuperAdmin || selectedRole === "OWNER" ? allRoleOptions : nonOwnerRoleOptions).map((role) => (
                   <MenuItem key={role.value} value={role.value}>
                     {role.label}
                   </MenuItem>

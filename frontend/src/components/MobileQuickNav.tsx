@@ -40,7 +40,8 @@ export function MobileQuickNav() {
     return null;
   }
 
-  if (location.pathname === "/login" || location.pathname === "/unauthorized") {
+  const hiddenPaths = ["/login", "/register", "/unauthorized", "/subscription-pending", "/subscription-expired", "/account-suspended", "/admin"];
+  if (hiddenPaths.includes(location.pathname) || location.pathname.startsWith("/admin")) {
     return null;
   }
 

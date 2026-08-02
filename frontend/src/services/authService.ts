@@ -1,5 +1,10 @@
 import { httpClient } from "./http";
-import type { AuthResponse, LoginRequest } from "../types/auth";
+import type {
+  AuthResponse,
+  LoginRequest,
+  SalonRegistrationRequest,
+  SalonRegistrationResponse,
+} from "../types/auth";
 
 export const authService = {
   login: async (payload: LoginRequest): Promise<AuthResponse> => {
@@ -10,6 +15,10 @@ export const authService = {
     const { data } = await httpClient.post<AuthResponse>("/auth/refresh", {
       refreshToken,
     });
+    return data;
+  },
+  register: async (payload: SalonRegistrationRequest): Promise<SalonRegistrationResponse> => {
+    const { data } = await httpClient.post<SalonRegistrationResponse>("/auth/register", payload);
     return data;
   },
 };

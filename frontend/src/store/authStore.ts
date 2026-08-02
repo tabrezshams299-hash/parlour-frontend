@@ -2,14 +2,16 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import { authStorage } from "../utils/storage";
-import type { AuthResponse, UserRole } from "../types/auth";
+import type { AccountStatus, AuthResponse, SubscriptionStatus, UserRole } from "../types/auth";
 
-interface AuthUser {
+export interface AuthUser {
   userId: string;
   salonId: string;
   name: string;
   email: string;
   role: UserRole;
+  subscriptionStatus: SubscriptionStatus;
+  accountStatus: AccountStatus;
 }
 
 interface AuthState {
@@ -21,6 +23,7 @@ interface AuthState {
   setSession: (payload: AuthResponse) => void;
   clearSession: () => void;
   hasRole: (allowedRoles: UserRole[]) => boolean;
+  canAccessDashboard: () => boolean;
 }
 
 const initialState = {
@@ -47,6 +50,8 @@ export const useAuthStore = create<AuthState>()(
             name: payload.name,
             email: payload.email,
             role: payload.role,
+            subscriptionStatus: payload.subscriptionStatus,
+            accountStatus: payload.accountStatus,
           },
         });
       },
@@ -56,6 +61,12 @@ export const useAuthStore = create<AuthState>()(
       hasRole: (allowedRoles) => {
         const role = get().user?.role;
         return role ? allowedRoles.includes(role) : false;
+      },
+      canAccessDashboard: () => {
+        const user = get().user;
+        if (!user) return false;
+        if (user.role === "SUPER_ADMIN") return true;
+        return user.subscriptionStatus === "ACTIVE" && user.accountStatus === "ACTIVE";
       },
     }),
     {

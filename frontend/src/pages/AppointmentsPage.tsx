@@ -36,7 +36,7 @@ import { serviceService } from "../services/serviceService";
 import { staffService } from "../services/staffService";
 import { userService } from "../services/userService";
 import { useAuthStore } from "../store/authStore";
-import type { AppointmentPaymentMode, AppointmentStatus } from "../types/appointment";
+import type { AppointmentDto, AppointmentPaymentMode, AppointmentStatus } from "../types/appointment";
 import { getApiErrorMessage } from "../utils/apiError";
 
 function parseTimeToMinutes(value: string): number {
@@ -245,8 +245,37 @@ export function AppointmentsPage() {
     onError: (error) => {
       setPageError(
         getApiErrorMessage(error, "Unable to update appointment.", {
-          badRequestMessage: "Invalid time range or staff selection.",
+          badRequestMessage: "Invalid time range, payment details, or staff selection.",
           notFoundMessage: "Selected customer, service, staff, or appointment was not found.",
+          conflictMessage: "Selected staff already has an overlapping appointment.",
+        })
+      );
+    },
+  });
+
+  const completeMutation = useMutation({
+    mutationFn: (appointment: AppointmentDto) =>
+      appointmentService.update(appointment.id, {
+        customerId: appointment.customerId,
+        serviceId: appointment.serviceId,
+        staffId: appointment.staffId,
+        appointmentDate: appointment.appointmentDate,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+        totalAmount: appointment.totalAmount,
+        paymentMode: appointment.paymentMode ?? "UPI",
+        paid: true,
+        status: "COMPLETED",
+      }),
+    onSuccess: () => {
+      setPageError(null);
+      void queryClient.invalidateQueries({ queryKey: ["appointments"] });
+    },
+    onError: (error) => {
+      setPageError(
+        getApiErrorMessage(error, "Unable to complete appointment.", {
+          badRequestMessage: "Payment details are required to complete an appointment.",
+          notFoundMessage: "Appointment not found.",
           conflictMessage: "Selected staff already has an overlapping appointment.",
         })
       );
@@ -347,11 +376,6 @@ export function AppointmentsPage() {
     () => customers.find((customer) => customer.mobile === customerMobileInput) ?? null,
     [customerMobileInput, customers]
   );
-  const selectedService = useMemo(
-    () => services.find((service) => service.id === selectedServiceId) ?? null,
-    [selectedServiceId, services]
-  );
-
   useEffect(() => {
     if (selectedCustomer) {
       setCustomerMobileInput(selectedCustomer.mobile);
@@ -363,14 +387,6 @@ export function AppointmentsPage() {
       setValue("customerId", matchedCustomerByMobile.id, { shouldValidate: true });
     }
   }, [matchedCustomerByMobile, setValue]);
-
-  useEffect(() => {
-    if (!selectedService) {
-      return;
-    }
-    setValue("durationMinutes", selectedService.durationMinutes, { shouldValidate: true });
-    setValue("totalAmount", selectedService.price, { shouldValidate: true });
-  }, [selectedService, setValue]);
 
   useEffect(() => {
     if (!selectedStartTime || !selectedDurationMinutes) {
@@ -562,6 +578,19 @@ export function AppointmentsPage() {
                       >
                         Edit
                       </Button>
+                      {appointment.status === "BOOKED" ? (
+                        <Button
+                          size="small"
+                          color="success"
+                          disabled={completeMutation.isPending}
+                          onClick={() => {
+                            setPageError(null);
+                            completeMutation.mutate(appointment);
+                          }}
+                        >
+                          Complete
+                        </Button>
+                      ) : null}
                       {canDeleteAppointments ? (
                         <Button
                           size="small"
@@ -657,7 +686,13 @@ export function AppointmentsPage() {
                 label="Service"
                 value={selectedServiceId}
                 onChange={(event) => {
-                  setValue("serviceId", event.target.value);
+                  const serviceId = event.target.value;
+                  const service = services.find((s) => s.id === serviceId);
+                  setValue("serviceId", serviceId, { shouldValidate: true });
+                  if (service) {
+                    setValue("durationMinutes", service.durationMinutes, { shouldValidate: true });
+                    setValue("totalAmount", service.price, { shouldValidate: true });
+                  }
                 }}
               >
                 {services.map((service) => (

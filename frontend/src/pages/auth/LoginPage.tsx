@@ -2,12 +2,13 @@ import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Alert, Button, Stack, TextField, Typography } from "@mui/material";
 
 import { authService } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
 import { AuthLayout } from "../../layouts/AuthLayout";
+import type { AuthResponse } from "../../types/auth";
 
 const loginSchema = z.object({
   email: z.email("Please enter a valid email address."),
@@ -25,8 +26,26 @@ interface LocationState {
   };
 }
 
-function resolveRoleLanding(role: string): string {
-  switch (role) {
+function resolvePostLoginPath(data: AuthResponse): string {
+  if (data.role === "SUPER_ADMIN") {
+    return "/admin";
+  }
+
+  if (data.accountStatus === "SUSPENDED") {
+    return "/account-suspended";
+  }
+
+  switch (data.subscriptionStatus) {
+    case "PENDING_PAYMENT":
+      return "/subscription-pending";
+    case "EXPIRED":
+    case "CANCELLED":
+      return "/subscription-expired";
+    default:
+      break;
+  }
+
+  switch (data.role) {
     case "OWNER":
       return "/owner";
     case "RECEPTION":
@@ -66,12 +85,27 @@ export function LoginPage() {
       const state = location.state as LocationState | null;
       const from = state?.from?.pathname;
 
-      navigate(from || resolveRoleLanding(data.role), { replace: true });
+      navigate(from || resolvePostLoginPath(data), { replace: true });
     },
   });
 
   if (user && accessToken) {
-    return <Navigate to={resolveRoleLanding(user.role)} replace />;
+    return (
+      <Navigate
+        to={
+          user.role === "SUPER_ADMIN"
+            ? "/admin"
+            : user.subscriptionStatus === "PENDING_PAYMENT"
+              ? "/subscription-pending"
+              : user.subscriptionStatus === "EXPIRED" || user.subscriptionStatus === "CANCELLED"
+                ? "/subscription-expired"
+                : user.accountStatus === "SUSPENDED"
+                  ? "/account-suspended"
+                  : resolvePostLoginPath({ role: user.role, subscriptionStatus: user.subscriptionStatus, accountStatus: user.accountStatus } as AuthResponse)
+        }
+        replace
+      />
+    );
   }
 
   return (
@@ -108,13 +142,23 @@ export function LoginPage() {
           </Stack>
 
           {loginMutation.isError ? (
-            <Alert severity="error">Unable to sign in. Please verify your credentials.</Alert>
+            <Alert severity="error">
+              {(loginMutation.error as { response?: { data?: { message?: string } } })?.response?.data
+                ?.message || "Unable to sign in. Please verify your credentials."}
+            </Alert>
           ) : null}
 
           <Button type="submit" variant="contained" disabled={loginMutation.isPending}>
             {loginMutation.isPending ? "Signing in..." : "Sign in"}
           </Button>
         </form>
+
+        <Typography className="auth-help" sx={{ mt: 2 }}>
+          Don't have a salon?{" "}
+          <Link to="/register" style={{ textDecoration: "underline" }}>
+            Register your salon
+          </Link>
+        </Typography>
 
         <Typography className="auth-help">Local default: owner@salon.local / ChangeMe123!</Typography>
       </div>
